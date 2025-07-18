@@ -19,7 +19,7 @@ if not GOOGLE_API_KEY:
 
 # --- Initialize Google Generative AI components in global scope ---
 llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash",
+    model="gemini-2.5-flash",
     google_api_key=GOOGLE_API_KEY,
     temperature=0.4,
     max_output_tokens=400,
