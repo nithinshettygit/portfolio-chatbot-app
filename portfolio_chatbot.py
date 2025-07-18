@@ -3,11 +3,11 @@ import os
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.chains import ConversationalRetrievalChain
-from langchain.memory import ConversationBufferWindowMemory # Changed to WindowMemory
+from langchain.memory import ConversationBufferWindowMemory
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
 import re
-from langchain_core.messages import HumanMessage, AIMessage # For streaming
+from langchain_core.messages import HumanMessage, AIMessage
 
 # Load environment variables (for API key)
 load_dotenv()
@@ -18,20 +18,17 @@ if not GOOGLE_API_KEY:
     st.stop()
 
 # --- Initialize Google Generative AI components in global scope ---
-# Keep model same, add max_output_tokens for conciseness and streaming=True for perceived speed
 llm = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash",
     google_api_key=GOOGLE_API_KEY,
-    temperature=0.4, # Slightly lower temperature for more concise and factual answers
-    max_output_tokens=400, # Limit output length for quicker responses (adjust as needed)
-    streaming=True # Enable streaming for perceived speed
+    temperature=0.4,
+    max_output_tokens=400,
+    streaming=True
 )
 embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=GOOGLE_API_KEY)
 
 
-# --- MASSIVELY EXPANDED KNOWLEDGE BASE ---
-# This is the most critical part for semantic understanding and comprehensive answers.
-# Structure your data well, use full sentences, and include all relevant details.
+# --- UPDATED: Significantly Expanded Knowledge Base with Education Details ---
 dummy_texts = [
     # --- About Me / Overview ---
     "Nithin Shetty M is an ambitious and results-driven AI/ML Engineering student pursuing a Bachelor of Engineering at Vivekananda College of Engineering & Technology (VCET) Puttur, specializing in Artificial Intelligence and Machine Learning.",
@@ -45,6 +42,12 @@ dummy_texts = [
     "His academic curriculum at VCET includes advanced topics such as Machine Learning Algorithms, Deep Learning Architectures, Natural Language Processing, Computer Vision, Data Structures & Algorithms, and Software Engineering Principles.",
     "Nithin maintains a strong academic record, demonstrating his commitment to mastering core AI/ML concepts.",
     "He has actively participated in various workshops and seminars related to emerging AI trends and technologies.",
+    # New: PUC (Pre-University Course) details
+    "Nithin completed his Pre-University Course (PUC) at [Your PUC College Name], from [Year Start] to [Year End], specializing in [Your PUC Stream, e.g., PCMB - Physics, Chemistry, Mathematics, Biology or PCMC - Physics, Chemistry, Mathematics, Computer Science].",
+    "During his PUC, Nithin achieved [Your PUC Percentage/Grade, e.g., 88% distinction].",
+    # New: SSLC (Secondary School Leaving Certificate) details
+    "For his secondary education, Nithin completed his SSLC at [Your SSLC School Name] in [Year of Completion], where he demonstrated strong foundational knowledge across subjects.",
+    "Nithin scored [Your SSLC Percentage/Grade, e.g., 96.36% with distinction] in his SSLC examinations.",
 
     # --- Skills ---
     # Programming Languages
@@ -114,19 +117,12 @@ def get_vectorstore(texts: list[str], _embeddings_model: GoogleGenerativeAIEmbed
         st.warning("No texts provided for vector store creation.")
         return None
     try:
-        # Use a text splitter for more robust chunking if dummy_texts gets very large
-        # from langchain.text_splitter import RecursiveCharacterTextSplitter
-        # text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-        # processed_texts = text_splitter.create_documents(texts)
-        # vectorstore = FAISS.from_documents(processed_texts, embedding=_embeddings_model)
-
-        # For current dummy_texts which are already somewhat chunked, direct from_texts is fine
         vectorstore = FAISS.from_texts(texts, embedding=_embeddings_model)
         return vectorstore
     except Exception as e:
         st.error(f"Error creating vector store: {e}")
         st.info("Ensure your GOOGLE_API_KEY is correct and has access to embedding models.")
-        st.stop() # Stop execution if vector store fails, as the app won't function
+        st.stop()
 
 vectorstore = get_vectorstore(dummy_texts, embeddings)
 
@@ -174,7 +170,7 @@ def get_conversation_chain(_llm_model: ChatGoogleGenerativeAI, _vector_store: FA
             retriever=_vector_store.as_retriever(search_kwargs={"k": 3}), # Retrieve top 3 relevant documents
             memory=_memory,
             combine_docs_chain_kwargs={"prompt": QA_CHAIN_PROMPT},
-            return_source_documents=False # Set to True if you want to display source chunks
+            return_source_documents=False
         )
         return conversation_chain
     except Exception as e:
@@ -184,8 +180,134 @@ def get_conversation_chain(_llm_model: ChatGoogleGenerativeAI, _vector_store: FA
 conversation_chain = get_conversation_chain(llm, vectorstore, st.session_state.conversation_memory)
 
 
-# --- Streamlit UI Components ---
-st.set_page_config(page_title="Nithin's AI Assistant", page_icon="🤖", layout="centered") # layout="wide" for more space
+# --- Streamlit UI Components & Custom Design ---
+st.set_page_config(page_title="Nithin's AI Assistant", page_icon="🤖", layout="centered")
+
+# --- Custom CSS for enhanced design ---
+st.markdown("""
+<style>
+/* General App Background and Layout */
+.stApp {
+    background-color: #f0f2f6; /* Light grey background for the entire app */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+}
+
+/* Main content block background */
+.main .block-container {
+    background-color: #ffffff; /* White background for the main content area */
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+/* Chat message container styling */
+.stChatMessage {
+    padding: 10px 15px;
+    border-radius: 18px;
+    margin-bottom: 10px;
+    max-width: 75%; /* Limit message bubble width */
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* User message bubble */
+.stChatMessage.st-emotion-cache-1c7y2gy:nth-child(even) { /* This targets the user message, which is typically the second (even) child in the message list */
+    background-color: #e0f2f7; /* Light blue for user messages */
+    color: #212121;
+    align-self: flex-end; /* Align user messages to the right */
+    border-bottom-right-radius: 2px;
+    margin-left: auto; /* Push to the right */
+    border: 1px solid #cceeff;
+}
+
+/* Assistant message bubble */
+.stChatMessage.st-emotion-cache-1c7y2gy:nth-child(odd) { /* This targets the assistant message, typically the first (odd) child */
+    background-color: #f7f7f7; /* Light grey for assistant messages */
+    color: #333;
+    align-self: flex-start; /* Align assistant messages to the left */
+    border-bottom-left-radius: 2px;
+    margin-right: auto; /* Push to the left */
+    border: 1px solid #eaeaea;
+}
+
+/* Chat input bar styling */
+.stTextInput > div > div > input {
+    border-radius: 25px;
+    padding: 10px 20px;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    font-size: 1rem;
+}
+
+/* Send button styling */
+.stButton button {
+    background-color: #007bff; /* Blue button */
+    color: white;
+    border-radius: 25px;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.stButton button:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
+
+/* Spinner styling */
+.stSpinner > div > div {
+    color: #007bff; /* Spinner color to match theme */
+}
+
+/* Adjust title font */
+h1 {
+    color: #007bff;
+    text-align: center;
+    font-weight: 600;
+}
+
+.stCaption {
+    text-align: center;
+    color: #666;
+    margin-bottom: 2rem;
+}
+
+/* Clear Chat button */
+.stButton:last-of-type button { /* Target the clear chat button specifically */
+    background-color: #dc3545; /* Red for clear button */
+    margin-top: 1rem;
+    width: 100%;
+}
+
+.stButton:last-of-type button:hover {
+    background-color: #c82333;
+}
+
+/* Info box styling */
+.stAlert.info {
+    background-color: #e6f7ff;
+    border-left: 5px solid #2196F3;
+    color: #2196F3;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+/* Ensure messages fill container and are scrollable if needed */
+.st-emotion-cache-zt5ig8 { /* This targets the container holding the chat messages */
+    overflow-y: auto;
+    max-height: 60vh; /* Adjust as needed */
+    padding-right: 15px; /* Space for scrollbar */
+}
+
+/* Remove default Streamlit footer */
+footer { visibility: hidden; }
+
+</style>
+""", unsafe_allow_html=True)
+
 
 st.title("💬 Nithin's AI Portfolio Assistant")
 st.caption("Ask me anything about Nithin Shetty M's projects, skills, and experience!")
@@ -225,7 +347,7 @@ if prompt := st.chat_input("Ask me about Nithin..."):
 
     # Placeholder for the bot's response
     with st.chat_message("assistant"):
-        message_placeholder = st.empty() # Create an empty container for streaming
+        message_placeholder = st.empty()
         full_response = ""
 
         if is_greeting:
@@ -238,37 +360,33 @@ if prompt := st.chat_input("Ask me about Nithin..."):
                 full_response = "Good afternoon! What would you like to know about Nithin?"
             elif "good evening" in lower_prompt:
                 full_response = "Good evening! I'm here to answer your questions about Nithin's portfolio."
-            else: # General greetings like hi, hello, hey
+            else:
                 full_response = "Hello there! I'm Nithin's AI assistant. How can I help you explore his portfolio?"
-            message_placeholder.markdown(full_response) # Display full response at once for greetings
+            message_placeholder.markdown(full_response)
 
         else:
-            # If not a greeting, proceed with the RAG chain and stream the output
             if conversation_chain:
                 try:
                     # LangChain's .stream() method yields chunks
                     for chunk in conversation_chain.stream({"question": prompt, "chat_history": st.session_state.conversation_memory.buffer_as_messages}):
-                        # Check if 'answer' key exists in the chunk (typical for ConversationalRetrievalChain stream output)
                         if "answer" in chunk:
                             full_response += chunk["answer"]
-                        # For newer LCEL chains, it might just yield AIMessageChunk or similar directly
                         elif isinstance(chunk, AIMessage):
                             full_response += chunk.content
-                        elif isinstance(chunk, dict) and "content" in chunk: # Fallback if it's a dict with 'content'
+                        elif isinstance(chunk, dict) and "content" in chunk:
                             full_response += chunk["content"]
                         else:
-                            # Handle cases where chunk is just a string or unexpected format
                             full_response += str(chunk)
 
-                        message_placeholder.markdown(full_response + "▌") # Add a blinking cursor for active typing effect
-                    message_placeholder.markdown(full_response) # Final display without cursor
+                        message_placeholder.markdown(full_response + "▌")
+                    message_placeholder.markdown(full_response)
 
                 except Exception as e:
                     full_response = f"An error occurred while getting a response: {e}. Please try again."
                     st.error(full_response)
             else:
                 full_response = "Chatbot is not fully initialized. Please check the backend configuration."
-                st.markdown(full_response) # Display error immediately
+                st.markdown(full_response)
 
     # Add assistant message to chat history for future context
     st.session_state.messages.append({"role": "assistant", "content": full_response})
@@ -281,7 +399,6 @@ st.info("Note: This chatbot provides information based on Nithin's portfolio dat
 # Button to clear the chat history
 if st.button("Clear Chat"):
     st.session_state.messages = []
-    # Reinitialize ConversationBufferWindowMemory to clear its state
     st.session_state.conversation_memory = ConversationBufferWindowMemory(
         memory_key="chat_history",
         return_messages=True,
