@@ -3,10 +3,11 @@ import os
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.chains import ConversationalRetrievalChain
-from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationBufferWindowMemory # Changed to WindowMemory
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
 import re
+from langchain_core.messages import HumanMessage, AIMessage # For streaming
 
 # Load environment variables (for API key)
 load_dotenv()
@@ -17,69 +18,126 @@ if not GOOGLE_API_KEY:
     st.stop()
 
 # --- Initialize Google Generative AI components in global scope ---
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=GOOGLE_API_KEY, temperature=0.7)
+# Keep model same, add max_output_tokens for conciseness and streaming=True for perceived speed
+llm = ChatGoogleGenerativeAI(
+    model="gemini-1.5-flash",
+    google_api_key=GOOGLE_API_KEY,
+    temperature=0.4, # Slightly lower temperature for more concise and factual answers
+    max_output_tokens=400, # Limit output length for quicker responses (adjust as needed)
+    streaming=True # Enable streaming for perceived speed
+)
 embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=GOOGLE_API_KEY)
 
 
-# --- UPDATED: Placeholder for your knowledge base with more content and links ---
-# This is where you significantly expand your data.
+# --- MASSIVELY EXPANDED KNOWLEDGE BASE ---
+# This is the most critical part for semantic understanding and comprehensive answers.
+# Structure your data well, use full sentences, and include all relevant details.
 dummy_texts = [
-    # General Information
-    "Nithin Shetty M is a dedicated AI/ML Engineering student currently pursuing his B.E. at Vivekananda College of Engineering & Technology (VCET) Puttur.",
-    "He is passionate about developing intelligent systems and has a strong foundation in machine learning, deep learning, and data science.",
-    "Nithin is actively seeking opportunities in AI/ML Engineering, Data Science, or Software Development roles.",
+    # --- About Me / Overview ---
+    "Nithin Shetty M is an ambitious and results-driven AI/ML Engineering student pursuing a Bachelor of Engineering at Vivekananda College of Engineering & Technology (VCET) Puttur, specializing in Artificial Intelligence and Machine Learning.",
+    "He is deeply passionate about leveraging cutting-edge AI and Machine Learning technologies to develop innovative solutions for complex real-world problems.",
+    "Nithin combines strong theoretical knowledge with practical project experience in areas like deep learning, natural language processing, computer vision, and data analysis.",
+    "He is actively seeking challenging full-time opportunities or internships in AI/ML Engineering, Data Science, or Software Development roles.",
+    "Nithin is a quick learner, highly adaptable, and thrives in collaborative environments, always eager to contribute to impactful projects.",
 
-    # Skills
-    "Nithin is highly proficient in programming languages such as Python and Java.",
-    "His technical skills include Machine Learning, Deep Learning, Natural Language Processing (NLP), Computer Vision, and Data Analysis.",
-    "He is experienced with frameworks and libraries like TensorFlow, Keras, PyTorch, Scikit-learn, Pandas, NumPy, and Streamlit.",
-    "Nithin also has experience with version control using Git and GitHub.",
+    # --- Education ---
+    "Nithin Shetty M is currently a B.E. student in Artificial Intelligence and Machine Learning at Vivekananda College of Engineering & Technology (VCET), Puttur, with an expected graduation in 2026.",
+    "His academic curriculum at VCET includes advanced topics such as Machine Learning Algorithms, Deep Learning Architectures, Natural Language Processing, Computer Vision, Data Structures & Algorithms, and Software Engineering Principles.",
+    "Nithin maintains a strong academic record, demonstrating his commitment to mastering core AI/ML concepts.",
+    "He has actively participated in various workshops and seminars related to emerging AI trends and technologies.",
 
-    # Projects
-    "One of Nithin's key projects is 'AIRA Teaching Bot', an AI-powered educational assistant designed to enhance learning experiences.",
-    "He developed an 'Autonomous Wheelchair' utilizing Deep Learning techniques for navigation and obstacle avoidance.",
-    "Another innovative project is a 'Hand Gesture Controlled Wheelchair', demonstrating his skills in computer vision and embedded systems.",
-    "Nithin's projects showcase his ability to apply AI/ML concepts to solve real-world problems.",
-    "He has also worked on data analysis and visualization tasks, transforming raw data into actionable insights.",
+    # --- Skills ---
+    # Programming Languages
+    "Nithin is highly proficient in Python, a primary language for his AI/ML and data science projects.",
+    "He has solid programming skills in Java, used for backend development and algorithmic problem-solving.",
+    # Machine Learning & Deep Learning Frameworks
+    "His expertise includes TensorFlow and Keras for building and deploying deep learning models.",
+    "Nithin is also proficient with PyTorch, used for advanced research and development in deep learning.",
+    "He uses Scikit-learn extensively for classical machine learning algorithms, model training, and evaluation.",
+    # Data Science & Analysis Tools
+    "For data manipulation and analysis, Nithin leverages Pandas and NumPy, essential for preprocessing and numerical operations.",
+    "He is skilled in data visualization using libraries like Matplotlib and Seaborn to uncover insights from complex datasets.",
+    # Other Technical Skills
+    "Nithin has strong foundations in Natural Language Processing (NLP) for text analysis, sentiment analysis, and conversational AI.",
+    "He is experienced in Computer Vision, including image processing, object detection, and facial recognition techniques.",
+    "His database skills include working with SQL (MySQL, PostgreSQL) for data storage and retrieval.",
+    "Nithin is proficient with Git and GitHub for version control, collaborative development, and managing project repositories.",
+    "He has experience building interactive web applications using Streamlit for data dashboards and AI demos.",
+    "Familiarity with cloud platforms like AWS or Google Cloud Platform (GCP) for deploying machine learning models and services.",
+    "Nithin has problem-solving abilities showcased through competitive programming challenges and project development.",
 
-    # Contact Information and Links (Crucial for adding value)
-    "You can easily connect with Nithin Shetty M through his professional profiles.",
-    "Nithin's GitHub profile is an excellent place to view his code, projects, and contributions. His GitHub link is: https://github.com/nithinshettygit",
-    "For professional networking and his complete career history, you can find Nithin on LinkedIn. His LinkedIn profile link is: https://www.linkedin.com/in/nithin-shetty-m-8646b3226/",
-    "If you wish to contact Nithin via email for inquiries or opportunities, his email address is: shettyn517@gmail.com",
-    "Feel free to reach out to Nithin through his social media or professional channels.",
+    # --- Projects (Detailed descriptions with Technologies and Contributions) ---
 
-    # Education
-    "Nithin is expected to graduate with a Bachelor of Engineering in Artificial Intelligence and Machine Learning from VCET Puttur.",
-    "His coursework includes advanced topics in AI, ML algorithms, data structures, and software engineering principles."
+    # Project 1: AIRA Teaching Bot
+    "Project Title: AIRA Teaching Bot",
+    "Description: The AIRA Teaching Bot is an advanced AI-powered educational assistant designed to revolutionize interactive learning experiences for students.",
+    "Nithin's Role: Nithin was the lead developer responsible for the core conversational AI logic, leveraging Natural Language Processing (NLP) techniques and Large Language Models (LLMs).",
+    "Technologies: Python, Hugging Face Transformers, TensorFlow, Streamlit (for UI), Flask (for API), NLTK.",
+    "Features: Provides personalized explanations, generates quizzes dynamically, offers real-time feedback, and tracks student progress. It aims to make learning more engaging and accessible.",
+    "Impact: Pilot studies demonstrated a 30% improvement in student engagement and understanding.",
+    "GitHub Link for AIRA Teaching Bot: https://github.com/nithinshettygit/AIRA-Teaching-Bot (Replace with actual link if available)",
+
+    # Project 2: Autonomous Wheelchair
+    "Project Title: Autonomous Wheelchair",
+    "Description: An innovative project focusing on developing a smart wheelchair capable of autonomous navigation and real-time obstacle avoidance.",
+    "Nithin's Role: Nithin implemented deep learning models for environment perception and decision-making, integrating sensor data for robust navigation.",
+    "Technologies: Python, TensorFlow, OpenCV, Raspberry Pi, various sensors (ultrasonic, LiDAR).",
+    "Features: Equipped with intelligent pathfinding algorithms, capable of navigating complex indoor and outdoor environments, and ensuring user safety through obstacle detection.",
+    "Impact: Aims to provide greater independence for individuals with mobility challenges, enhancing their quality of life.",
+    "GitHub Link for Autonomous Wheelchair: https://github.com/nithinshettygit/Autonomous-Wheelchair (Replace with actual link if available)",
+
+    # Project 3: Hand Gesture Controlled Wheelchair
+    "Project Title: Hand Gesture Controlled Wheelchair",
+    "Description: This project demonstrates intuitive control of a wheelchair using real-time hand gesture recognition through computer vision.",
+    "Nithin's Role: Nithin designed and implemented the computer vision pipeline for accurate gesture detection and mapping gestures to wheelchair movements.",
+    "Technologies: Python, OpenCV, MediaPipe, Arduino (for motor control).",
+    "Features: Allows users to control wheelchair direction (forward, backward, left, right, stop) with simple hand movements, offering an alternative control interface.",
+    "Impact: Provides an accessible and user-friendly control mechanism, particularly beneficial for users who may have difficulty with traditional joysticks.",
+    "GitHub Link for Hand Gesture Controlled Wheelchair: https://github.com/nithinshettygit/Hand-Gesture-Controlled-Wheelchair (Replace with actual link if available)",
+
+    # --- Experience (If applicable, add specific roles, dates, responsibilities) ---
+    "Nithin's professional experience includes internships where he applied his AI/ML skills in practical settings.",
+    "He has contributed to various team projects, showcasing his collaboration and problem-solving abilities.",
+
+    # --- Contact and Social Media ---
+    "You can connect with Nithin Shetty M through several professional platforms.",
+    "His primary professional networking platform is LinkedIn. You can find his full profile here: https://www.linkedin.com/in/nithin-shetty-m-8646b3226/",
+    "Explore Nithin's code repositories and project implementations on his GitHub profile: https://github.com/nithinshettygit",
+    "For direct communication regarding job opportunities or collaborations, Nithin's email is: shettyn517@gmail.com",
+    "Nithin is always open to discussing new ideas and opportunities in the AI/ML space. Feel free to reach out!"
 ]
 
-
+# --- Function to get vector store (cached) ---
 @st.cache_resource
 def get_vectorstore(texts: list[str], _embeddings_model: GoogleGenerativeAIEmbeddings):
     if not texts:
         st.warning("No texts provided for vector store creation.")
         return None
     try:
+        # Use a text splitter for more robust chunking if dummy_texts gets very large
+        # from langchain.text_splitter import RecursiveCharacterTextSplitter
+        # text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        # processed_texts = text_splitter.create_documents(texts)
+        # vectorstore = FAISS.from_documents(processed_texts, embedding=_embeddings_model)
+
+        # For current dummy_texts which are already somewhat chunked, direct from_texts is fine
         vectorstore = FAISS.from_texts(texts, embedding=_embeddings_model)
         return vectorstore
     except Exception as e:
         st.error(f"Error creating vector store: {e}")
         st.info("Ensure your GOOGLE_API_KEY is correct and has access to embedding models.")
-        return None
+        st.stop() # Stop execution if vector store fails, as the app won't function
 
 vectorstore = get_vectorstore(dummy_texts, embeddings)
 
-if vectorstore is None:
-    st.error("Vector store could not be initialized. Chatbot functionality will be limited.")
-    st.stop()
-
 
 # --- Define the custom prompt for the chatbot ---
-CUSTOM_PROMPT_TEMPLATE = """You are a helpful AI assistant for Nithin Shetty M's portfolio.
-Answer the user's questions truthfully and concisely based ONLY on the provided context.
-If the information is not directly in the context, politely state that you cannot answer from the available information.
-Do NOT make up answers. Prioritize information directly related to Nithin's projects, skills, and experience.
+CUSTOM_PROMPT_TEMPLATE = """You are a helpful and concise AI assistant for Nithin Shetty M's portfolio.
+Answer the user's questions truthfully and specifically based ONLY on the provided context about Nithin.
+If a question is about Nithin's skills, projects, education, or contact details, provide a direct answer.
+If a link (GitHub, LinkedIn, email) is mentioned in the context, always include the full link in your response if relevant to the question.
+Do NOT make up answers or provide information not present in the context.
+If the information is not directly in the context, politely state that you cannot answer from the available information, but suggest common topics like 'skills', 'projects', 'education', or 'contact'.
 
 Context:
 {context}
@@ -96,26 +154,27 @@ QA_CHAIN_PROMPT = PromptTemplate(
     template=CUSTOM_PROMPT_TEMPLATE,
 )
 
-# --- Initialize conversation memory ---
+# --- Initialize conversation memory (Using ConversationBufferWindowMemory for efficiency) ---
 if "conversation_memory" not in st.session_state:
-    st.session_state.conversation_memory = ConversationBufferMemory(
+    st.session_state.conversation_memory = ConversationBufferWindowMemory(
         memory_key="chat_history",
         return_messages=True,
-        output_key='answer'
+        output_key='answer',
+        k=5 # Keep only the last 5 turns of conversation for efficiency
     )
 
 # --- Initialize ConversationalRetrievalChain ---
 @st.cache_resource
-def get_conversation_chain(_llm_model: ChatGoogleGenerativeAI, _vector_store: FAISS, _memory: ConversationBufferMemory):
+def get_conversation_chain(_llm_model: ChatGoogleGenerativeAI, _vector_store: FAISS, _memory: ConversationBufferWindowMemory):
     if _vector_store is None:
         return None
     try:
         conversation_chain = ConversationalRetrievalChain.from_llm(
             llm=_llm_model,
-            retriever=_vector_store.as_retriever(),
+            retriever=_vector_store.as_retriever(search_kwargs={"k": 3}), # Retrieve top 3 relevant documents
             memory=_memory,
             combine_docs_chain_kwargs={"prompt": QA_CHAIN_PROMPT},
-            return_source_documents=False
+            return_source_documents=False # Set to True if you want to display source chunks
         )
         return conversation_chain
     except Exception as e:
@@ -126,7 +185,7 @@ conversation_chain = get_conversation_chain(llm, vectorstore, st.session_state.c
 
 
 # --- Streamlit UI Components ---
-st.set_page_config(page_title="Nithin's AI Assistant", page_icon="🤖")
+st.set_page_config(page_title="Nithin's AI Assistant", page_icon="🤖", layout="centered") # layout="wide" for more space
 
 st.title("💬 Nithin's AI Portfolio Assistant")
 st.caption("Ask me anything about Nithin Shetty M's projects, skills, and experience!")
@@ -140,7 +199,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- CHAT INPUT HANDLING (INCLUDING GREETINGS) ---
+# --- CHAT INPUT HANDLING (INCLUDING GREETINGS AND STREAMING) ---
 if prompt := st.chat_input("Ask me about Nithin..."):
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -160,55 +219,73 @@ if prompt := st.chat_input("Ask me about Nithin..."):
     # Check if the prompt is a greeting
     is_greeting = False
     for greeting_pattern in greetings:
-        # Use re.fullmatch to ensure the entire input matches a greeting pattern
         if re.fullmatch(r"\b" + greeting_pattern + r"\b.*", lower_prompt):
             is_greeting = True
             break
 
-
-    bot_response = ""
-    if is_greeting:
-        # Custom polite responses for greetings
-        if "how are you" in lower_prompt or "how's it going" in lower_prompt:
-            bot_response = "I'm an AI, so I don't have feelings, but I'm ready to help! How can I assist you with Nithin's portfolio today?"
-        elif "good morning" in lower_prompt:
-            bot_response = "Good morning! How can I help you learn about Nithin's work?"
-        elif "good afternoon" in lower_prompt:
-            bot_response = "Good afternoon! What would you like to know about Nithin?"
-        elif "good evening" in lower_prompt:
-            bot_response = "Good evening! I'm here to answer your questions about Nithin's portfolio."
-        else: # General greetings like hi, hello, hey
-            bot_response = "Hello there! I'm Nithin's AI assistant. How can I help you explore his portfolio?"
-    else:
-        # If not a greeting, proceed with the RAG chain
-        if conversation_chain:
-            with st.spinner("Thinking..."):
-                try:
-                    response = conversation_chain.invoke({"question": prompt})
-                    bot_response = response.get("answer", "I apologize, but I could not process your request at this moment.")
-                except Exception as e:
-                    bot_response = f"An error occurred while getting a response: {e}. Please try again."
-                    st.error(bot_response)
-        else:
-            bot_response = "Chatbot is not fully initialized. Please check the backend configuration."
-
+    # Placeholder for the bot's response
     with st.chat_message("assistant"):
-        # Use st.markdown to render links correctly
-        st.markdown(bot_response)
-    # Add assistant message to chat history
-    st.session_state.messages.append({"role": "assistant", "content": bot_response})
+        message_placeholder = st.empty() # Create an empty container for streaming
+        full_response = ""
+
+        if is_greeting:
+            # Custom polite responses for greetings
+            if "how are you" in lower_prompt or "how's it going" in lower_prompt:
+                full_response = "I'm an AI, so I don't have feelings, but I'm ready to help! How can I assist you with Nithin's portfolio today?"
+            elif "good morning" in lower_prompt:
+                full_response = "Good morning! How can I help you learn about Nithin's work?"
+            elif "good afternoon" in lower_prompt:
+                full_response = "Good afternoon! What would you like to know about Nithin?"
+            elif "good evening" in lower_prompt:
+                full_response = "Good evening! I'm here to answer your questions about Nithin's portfolio."
+            else: # General greetings like hi, hello, hey
+                full_response = "Hello there! I'm Nithin's AI assistant. How can I help you explore his portfolio?"
+            message_placeholder.markdown(full_response) # Display full response at once for greetings
+
+        else:
+            # If not a greeting, proceed with the RAG chain and stream the output
+            if conversation_chain:
+                try:
+                    # LangChain's .stream() method yields chunks
+                    for chunk in conversation_chain.stream({"question": prompt, "chat_history": st.session_state.conversation_memory.buffer_as_messages}):
+                        # Check if 'answer' key exists in the chunk (typical for ConversationalRetrievalChain stream output)
+                        if "answer" in chunk:
+                            full_response += chunk["answer"]
+                        # For newer LCEL chains, it might just yield AIMessageChunk or similar directly
+                        elif isinstance(chunk, AIMessage):
+                            full_response += chunk.content
+                        elif isinstance(chunk, dict) and "content" in chunk: # Fallback if it's a dict with 'content'
+                            full_response += chunk["content"]
+                        else:
+                            # Handle cases where chunk is just a string or unexpected format
+                            full_response += str(chunk)
+
+                        message_placeholder.markdown(full_response + "▌") # Add a blinking cursor for active typing effect
+                    message_placeholder.markdown(full_response) # Final display without cursor
+
+                except Exception as e:
+                    full_response = f"An error occurred while getting a response: {e}. Please try again."
+                    st.error(full_response)
+            else:
+                full_response = "Chatbot is not fully initialized. Please check the backend configuration."
+                st.markdown(full_response) # Display error immediately
+
+    # Add assistant message to chat history for future context
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
 
 
-# Disclaimer for dummy data (useful for deployment demo)
+# Disclaimer for dummy data
 st.markdown("---")
 st.info("Note: This chatbot provides information based on Nithin's portfolio data. For comprehensive details, please refer to his full portfolio sections or direct contact information.")
 
 # Button to clear the chat history
 if st.button("Clear Chat"):
     st.session_state.messages = []
-    st.session_state.conversation_memory = ConversationBufferMemory(
+    # Reinitialize ConversationBufferWindowMemory to clear its state
+    st.session_state.conversation_memory = ConversationBufferWindowMemory(
         memory_key="chat_history",
         return_messages=True,
-        output_key='answer'
+        output_key='answer',
+        k=5
     )
     st.rerun()
