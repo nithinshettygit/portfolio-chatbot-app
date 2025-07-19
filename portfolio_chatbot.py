@@ -170,9 +170,10 @@ conversation_chain = get_conversation_chain(llm, vectorstore, st.session_state.c
 
 
 # --- Streamlit UI Components & Custom Design ---
-st.set_page_config(page_title="Nithin's AI Assistant", page_icon="🤖", layout="centered")
+# Changed layout to "wide" to gain more control with max-width in CSS, then control via CSS
+st.set_page_config(page_title="Nithin's AI Assistant", page_icon="🤖", layout="wide") # Changed to wide
 
-# --- Custom CSS for enhanced design (using data-testid for robustness) ---
+# --- Custom CSS for enhanced design and reduced size ---
 st.markdown("""
 <style>
 /* General App Background and Layout */
@@ -182,85 +183,85 @@ st.markdown("""
     color: #333;
 }
 
-/* Main content block background */
+/* Main content block background - REDUCED MAX-WIDTH */
 .main .block-container {
     background-color: #ffffff; /* White background for the main content area */
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 2rem;
-    margin-top: 2rem;
-    margin-bottom: 2rem;
+    padding: 1.5rem; /* Slightly reduced padding */
+    margin-top: 1.5rem; /* Slightly reduced margin */
+    margin-bottom: 1.5rem; /* Slightly reduced margin */
+    max-width: 600px; /* IMPORTANT: Reduced max-width for a narrower app */
+    margin-left: auto; /* Center the container */
+    margin-right: auto; /* Center the container */
 }
 
 /* Chat message container styling */
 div[data-testid="stChatMessage"] { /* General styling for all chat messages */
-    padding: 10px 15px;
-    border-radius: 18px;
-    margin-bottom: 10px;
-    max-width: 75%; /* Limit message bubble width */
-    font-size: 0.95rem;
-    line-height: 1.5;
-    /* Ensure content inside this div defaults to black if not overridden */
+    padding: 8px 12px; /* Reduced padding */
+    border-radius: 16px; /* Slightly smaller radius */
+    margin-bottom: 8px; /* Reduced margin */
+    max-width: 70%; /* Further limit message bubble width */
+    font-size: 0.9rem; /* Slightly smaller font */
+    line-height: 1.4; /* Slightly tighter line height */
     color: #000000 !important;
     -webkit-text-fill-color: #000000 !important;
 }
 
 /* User message bubble */
 div[data-testid="stChatMessage"][data-st-chat-message-user="true"] {
-    background-color: #e0f2f7 !important; /* Light blue for user messages, forced */
-    align-self: flex-end; /* Align user messages to the right */
+    background-color: #e0f2f7 !important;
+    align-self: flex-end;
     border-bottom-right-radius: 2px;
-    margin-left: auto; /* Push to the right */
-    border: 1px solid #cceeff !important; /* Forced border */
+    margin-left: auto;
+    border: 1px solid #cceeff !important;
 }
-/* Ensure text inside user message is dark */
 div[data-testid="stChatMessage"][data-st-chat-message-user="true"] p {
-    color: #212121 !important; /* Force dark grey for user text inside p */
+    color: #212121 !important;
     -webkit-text-fill-color: #212121 !important;
 }
 
 /* Assistant message bubble */
 div[data-testid="stChatMessage"][data-st-chat-message-user="false"] {
-    background-color: #f7f7f7 !important; /* Light grey for assistant messages, forced */
-    align-self: flex-start; /* Align assistant messages to the left */
+    background-color: #f7f7f7 !important;
+    align-self: flex-start;
     border-bottom-left-radius: 2px;
-    margin-right: auto; /* Push to the left */
-    border: 1px solid #eaeaea !important; /* Forced border */
+    margin-right: auto;
+    border: 1px solid #eaeaea !important;
 }
-/* IMPORTANT: Force pure black text for the assistant's content */
 div[data-testid="stChatMessage"][data-st-chat-message-user="false"] p {
-    color: #000000 !important; /* FORCED PURE BLACK TEXT for paragraph content */
-    -webkit-text-fill-color: #000000 !important; /* Added for iOS/Safari specific overrides */
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
 }
-
 
 /* Chat input bar styling */
 .stTextInput > div > div > input {
-    border-radius: 25px;
-    padding: 10px 20px;
+    border-radius: 20px; /* Slightly smaller border radius */
+    padding: 8px 15px; /* Reduced padding */
     border: 1px solid #ccc;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    font-size: 1rem;
+    font-size: 0.9rem; /* Slightly smaller font */
 }
 
 /* Send button styling */
 .stButton button {
-    background-color: #007bff; /* Blue button */
+    background-color: #007bff;
     color: white;
-    border-radius: 25px;
-    padding: 10px 20px;
+    border-radius: 20px; /* Slightly smaller border radius */
+    padding: 8px 15px; /* Reduced padding */
     border: none;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    font-size: 0.9rem; /* Slightly smaller font */
 }
 
 .stButton button:hover {
-    background-color: #0056b3; /* Darker blue on hover */
+    background-color: #0056b3;
 }
 
 /* Spinner styling */
 .stSpinner > div > div {
-    color: #007bff; /* Spinner color to match theme */
+    color: #007bff;
 }
 
 /* Adjust title font */
@@ -268,47 +269,47 @@ h1 {
     color: #007bff;
     text-align: center;
     font-weight: 600;
+    font-size: 1.8em; /* Slightly smaller title font */
+    margin-bottom: 0.8em;
 }
 
 /* Styling for the new caption container */
 .caption-container {
-    background-color: #e6f7ff; /* Light blue background */
-    border: 1px solid #cceeff; /* Light blue border */
-    border-radius: 8px; /* Slightly rounded corners */
-    padding: 0.75rem 1.25rem; /* Padding inside the container */
-    margin-top: 1.5rem; /* Space above it */
-    margin-bottom: 2rem; /* Space below it */
+    background-color: #e6f7ff;
+    border: 1px solid #cceeff;
+    border-radius: 8px;
+    padding: 0.6rem 1rem; /* Reduced padding */
+    margin-top: 1rem; /* Reduced margin */
+    margin-bottom: 1.5rem; /* Reduced margin */
     text-align: center;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Subtle shadow */
-    width: fit-content; /* Make container fit its content width */
-    max-width: 90%; /* Max width to keep it from being too wide */
-    margin-left: auto; /* Center the block */
-    margin-right: auto; /* Center the block */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    width: fit-content;
+    max-width: 90%;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* Styling for the caption text itself, within the container */
-.caption-container p { /* Target the paragraph inside st.markdown */
-    color: #336699; /* Darker blue text for contrast */
-    font-size: 1.1em; /* Increased font size for better visibility */
-    margin: 0; /* Remove default paragraph margin */
-    line-height: 1.4;
+.caption-container p {
+    color: #336699;
+    font-size: 1.0em; /* Slightly smaller font size */
+    margin: 0;
+    line-height: 1.3;
 }
 
 /* Clear Chat button specific styling for smaller width */
-/* IMPORTANT: This class needs to be applied via JS as direct class assignment is not natively supported by Streamlit buttons */
 .small-button-style {
-    width: auto; /* Adjust width based on content */
-    padding: 8px 15px; /* Smaller padding */
-    font-size: 0.85rem; /* Smaller font */
-    border-radius: 20px; /* Slightly smaller border radius */
-    background-color: #dc3545 !important; /* Ensure red background */
-    color: white !important; /* Ensure white text */
+    width: auto;
+    padding: 6px 12px !important; /* Further reduced padding */
+    font-size: 0.8rem !important; /* Further reduced font */
+    border-radius: 18px !important; /* Slightly smaller border radius */
+    background-color: #dc3545 !important;
+    color: white !important;
     border: none !important;
 }
 .small-button-style:hover {
     background-color: #c82333 !important;
 }
-
 
 /* Info box styling */
 .stAlert.info {
@@ -319,11 +320,11 @@ h1 {
     padding: 10px;
 }
 
-/* Ensure messages fill container and are scrollable if needed */
+/* Ensure messages fill container and are scrollable if needed - REDUCED MAX-HEIGHT */
 .st-emotion-cache-zt5ig8 { /* This targets the container holding the chat messages */
     overflow-y: auto;
-    max-height: 60vh; /* Adjust as needed */
-    padding-right: 15px; /* Space for scrollbar */
+    max-height: 50vh; /* IMPORTANT: Reduced max-height for a more compact chat window */
+    padding-right: 10px; /* Space for scrollbar */
 }
 
 /* Remove default Streamlit footer */
