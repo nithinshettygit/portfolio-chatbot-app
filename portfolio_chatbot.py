@@ -1,6 +1,6 @@
 import streamlit as st
 import os
-from dotenv import load_dotenv # <-- Keep this for .env file loading
+from dotenv import load_dotenv
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.chains import ConversationalRetrievalChain
@@ -10,7 +10,7 @@ import re
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_groq import ChatGroq
 
-# --- REVERTED: Load environment variables directly from .env ---
+# --- Load environment variables directly from .env ---
 # This method works well when running locally or in Codespaces with a .env file.
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -149,7 +149,7 @@ if "conversation_memory" not in st.session_state:
 @st.cache_resource
 def get_conversation_chain(_llm_model: ChatGroq, _vector_store: FAISS, _memory: ConversationBufferWindowMemory):
     if _vector_store is None:
-        st.warning("Vector store is not available, conversation chain cannot be initialized.") # <-- RESTORED WARNING
+        st.warning("Vector store is not available, conversation chain cannot be initialized.")
         return None
     try:
         conversation_chain = ConversationalRetrievalChain.from_llm(
@@ -215,7 +215,8 @@ st.markdown("""
 /* Assistant message bubble */
 .stChatMessage.st-emotion-cache-1c7y2gy:nth-child(odd) { /* This targets the assistant message */
     background-color: #f7f7f7 !important; /* Light grey for assistant messages, forced */
-    color: #000000 !important; /* FORCE BLACK TEXT for assistant messages */
+    color: #1a1a2e !important; /* VERY DARK BLUE for assistant messages, forced for visibility */
+    -webkit-text-fill-color: #1a1a2e !important; /* Added for iOS/Safari specific overrides */
     align-self: flex-start; /* Align assistant messages to the left */
     border-bottom-left-radius: 2px;
     margin-right: auto; /* Push to the left */
@@ -388,7 +389,7 @@ if prompt := st.chat_input("Ask me about Nithin..."):
 
         else:
             if conversation_chain:
-                with st.spinner("Thinking..."): # <-- RESTORED SPINNER
+                with st.spinner("Thinking..."):
                     try:
                         response_obj = conversation_chain.invoke(
                             {"question": prompt, "chat_history": st.session_state.conversation_memory.buffer_as_messages}
