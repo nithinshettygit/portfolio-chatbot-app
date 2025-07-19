@@ -38,8 +38,8 @@ embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_a
 # --- UPDATED KNOWLEDGE BASE WITH YOUR RESUME CONTENT (CONFIRMED) ---
 dummy_texts = [
     # Contact Information
-    "Nithin Shetty M can be contacted via email at shettyn517@gmail.com or phone at +91 77601 52732.",
-    "His LinkedIn profile is available at https://linkedin.com/in/nithin-shetty-m-530274265.",
+    "Nithin Shetty M can be contacted via email at email adress: shettyn517@gmail.com and phone at +91 77601 52732.",
+    "His LinkedIn profile is available at linkedin :  https://linkedin.com/in/nithin-shetty-m-530274265.",
     "His GitHub profile is https://github.com/nithinshettygit.",
     "Nithin is located in Dakshina Kannada, Karnataka, 574325.",
 
