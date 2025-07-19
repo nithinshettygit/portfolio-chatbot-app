@@ -172,7 +172,7 @@ conversation_chain = get_conversation_chain(llm, vectorstore, st.session_state.c
 # --- Streamlit UI Components & Custom Design ---
 st.set_page_config(page_title="Nithin's AI Assistant", page_icon="🤖", layout="centered")
 
-# --- Custom CSS for enhanced design ---
+# --- Custom CSS for enhanced design (using data-testid for robustness) ---
 st.markdown("""
 <style>
 /* General App Background and Layout */
@@ -193,38 +193,42 @@ st.markdown("""
 }
 
 /* Chat message container styling */
-.stChatMessage {
+div[data-testid="stChatMessage"] { /* General styling for all chat messages */
     padding: 10px 15px;
     border-radius: 18px;
     margin-bottom: 10px;
     max-width: 75%; /* Limit message bubble width */
     font-size: 0.95rem;
     line-height: 1.5;
+    /* Ensure content inside this div defaults to black if not overridden */
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
 }
 
 /* User message bubble */
-.stChatMessage.st-emotion-cache-1c7y2gy:nth-child(even) { /* This targets the user message */
+div[data-testid="stChatMessage"][data-st-chat-message-user="true"] {
     background-color: #e0f2f7 !important; /* Light blue for user messages, forced */
-    color: #212121 !important; /* Force dark grey for user text */
     align-self: flex-end; /* Align user messages to the right */
     border-bottom-right-radius: 2px;
     margin-left: auto; /* Push to the right */
     border: 1px solid #cceeff !important; /* Forced border */
 }
+/* Ensure text inside user message is dark */
+div[data-testid="stChatMessage"][data-st-chat-message-user="true"] p {
+    color: #212121 !important; /* Force dark grey for user text inside p */
+    -webkit-text-fill-color: #212121 !important;
+}
 
 /* Assistant message bubble */
-.stChatMessage.st-emotion-cache-1c7y2gy:nth-child(odd) { /* This targets the assistant message */
+div[data-testid="stChatMessage"][data-st-chat-message-user="false"] {
     background-color: #f7f7f7 !important; /* Light grey for assistant messages, forced */
-    color: #000000 !important; /* FORCED PURE BLACK TEXT for assistant messages */
-    -webkit-text-fill-color: #000000 !important; /* Added for iOS/Safari specific overrides */
     align-self: flex-start; /* Align assistant messages to the left */
     border-bottom-left-radius: 2px;
     margin-right: auto; /* Push to the left */
     border: 1px solid #eaeaea !important; /* Forced border */
 }
-
-/* IMPORTANT: Target the actual text content within the assistant message */
-.stChatMessage.st-emotion-cache-1c7y2gy:nth-child(odd) p {
+/* IMPORTANT: Force pure black text for the assistant's content */
+div[data-testid="stChatMessage"][data-st-chat-message-user="false"] p {
     color: #000000 !important; /* FORCED PURE BLACK TEXT for paragraph content */
     -webkit-text-fill-color: #000000 !important; /* Added for iOS/Safari specific overrides */
 }
@@ -392,7 +396,9 @@ if prompt := st.chat_input("Ask me about Nithin..."):
                 full_response = "Good evening! I'm here to answer your questions about Nithin's portfolio."
             else:
                 full_response = "Hello there! I'm Nithin's AI assistant. How can I help you explore his portfolio?"
-            message_placeholder.markdown(full_response)
+            
+            # Use inline style to force black text for greetings
+            message_placeholder.markdown(f'<p style="color: #000000 !important; -webkit-text-fill-color: #000000 !important; margin-bottom: 0;">{full_response}</p>', unsafe_allow_html=True)
 
         else:
             if conversation_chain:
@@ -402,14 +408,17 @@ if prompt := st.chat_input("Ask me about Nithin..."):
                             {"question": prompt, "chat_history": st.session_state.conversation_memory.buffer_as_messages}
                         )
                         full_response = response_obj["answer"]
-                        message_placeholder.markdown(full_response)
+                        
+                        # Use inline style to force black text for AI responses
+                        message_placeholder.markdown(f'<p style="color: #000000 !important; -webkit-text-fill-color: #000000 !important; margin-bottom: 0;">{full_response}</p>', unsafe_allow_html=True)
 
                     except Exception as e:
                         full_response = f"An error occurred while getting a response: {e}. Please try again."
                         st.error(full_response)
             else:
                 full_response = "Chatbot is not fully initialized. Please check the backend configuration."
-                st.markdown(full_response)
+                # Use inline style to force black text for initialization message
+                st.markdown(f'<p style="color: #000000 !important; -webkit-text-fill-color: #000000 !important; margin-bottom: 0;">{full_response}</p>', unsafe_allow_html=True)
 
     # Add assistant message to chat history for future context
     st.session_state.messages.append({"role": "assistant", "content": full_response})
