@@ -35,9 +35,9 @@ llm = ChatGroq(
 embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=GOOGLE_API_KEY)
 
 
-# --- UPDATED KNOWLEDGE BASE WITH YOUR RESUME CONTENT (CONFIRMED) ---
+# --- UPDATED KNOWLEDGE BASE WITH YOUR RESUME CONTENT ---
 dummy_texts = [
-    # Contact Information
+    # Contact Information - More robust and varied phrasing
     "Nithin Shetty M's email address is shettyn517@gmail.com.",
     "You can contact Nithin via email at shettyn517@gmail.com.",
     "To email Nithin, use shettyn517@gmail.com.",
@@ -54,7 +54,7 @@ dummy_texts = [
     "Nithin's GitHub: https://github.com/nithinshettygit.",
 
     "Nithin is located in Dakshina Kannada, Karnataka, 574325.",
-    "Nithin Shetty M resides in Dakshina Kannada, Karnataka, 574325."
+    "Nithin Shetty M resides in Dakshina Kannada, Karnataka, 574325.",
 
     # Executive Summary
     "Nithin Shetty M is an AI & ML engineering student with hands-on experience in deep learning, LLM-based agents, and real-time systems.",
@@ -84,7 +84,7 @@ dummy_texts = [
     "The project achieved reliable navigation in a controlled hospital-like environment.",
     "Tools used for the Autonomous Wheelchair project include Python, PyTorch, OpenCV, Flask, Arduino, and NodeMCU.",
 
-    # Project: Hand Gesture Controlled Wheelchair (from previous content, assuming it's still relevant)
+    # Project: Hand Gesture Controlled Wheelchair
     "Project Title: Hand Gesture Controlled Wheelchair",
     "Description: This project demonstrates intuitive control of a wheelchair using real-time hand gesture recognition through computer vision.",
     "Nithin's Role: Nithin designed and implemented the computer vision pipeline for accurate gesture detection and mapping gestures to wheelchair movements.",
@@ -122,17 +122,23 @@ def get_vectorstore(texts: list[str], _embeddings_model: GoogleGenerativeAIEmbed
         st.stop()
 
 vectorstore = get_vectorstore(dummy_texts, embeddings)
+
+
+# --- Define the custom prompt for the chatbot (MORE ROBUST) ---
 CUSTOM_PROMPT_TEMPLATE = """You are Nithin Shetty M's highly detailed and helpful AI portfolio assistant.
 Your primary goal is to provide comprehensive and accurate answers about Nithin based *only* on the provided context.
-**Crucially, prioritize providing all available details from the context for every relevant question.**
-If a question asks about Nithin's projects, ensure you mention *all* projects found in the context and provide their full descriptions, roles, technologies, features, and impact if available.
-If a question is about Nithin's skills, list all relevant skills (programming languages, AI/ML, LLM/GenAI tools, Web/UI, soft skills).
-**If asked about contact details, email, or phone, you MUST provide ALL available contact information including the full email address (e.g., shettyn517@gmail.com), phone number, LinkedIn, and GitHub links.**
 
-**IMPORTANT: Do NOT apologize, explain your internal reasoning, or reference what was or was not available in 'earlier context.' Just answer directly based on the information provided to you in the current context.**
+**STRICT INSTRUCTIONS: Under NO circumstances should you apologize for past responses, explain your internal thought process, or comment on what was or was not "previously available" in the context or chat history. Just provide the answer directly based on the CURRENT context you have. Be concise and to the point while being comprehensive with details.**
+
+If a question asks about Nithin's projects, ensure you mention *all* projects found in the context and provide their full descriptions, roles, technologies, features, and impact if available. Do not claim information is missing if it is present in the context.
+If a question is about Nithin's skills, list all relevant skills (programming languages, AI/ML, LLM/GenAI tools, Web/UI, soft skills).
+If asked about contact details, email, or phone, you MUST provide ALL available contact information including the full email address (e.g., shettyn517@gmail.com), phone number, LinkedIn, and GitHub links.
+
+For general greetings (e.g., "hi", "hello", "how are you", "hey"), respond with a friendly greeting and offer assistance about Nithin's portfolio.
+For concluding remarks (e.g., "thank you", "bye", "goodbye", "ok thank you", "thanks"), respond with a polite closing statement, e.g., "You're welcome! Feel free to ask if you have more questions about Nithin's portfolio." or "Goodbye! Have a great day."
 
 If the information needed to answer a question is NOT present in the provided context, simply state: "I cannot find information on that specific topic within Nithin's provided portfolio context. I can answer questions about his skills, projects, education, experience, contact details, and certifications. For more details, you can contact Nithin via email: shettyn517@gmail.com"
-**Do NOT invent or infer any information.**
+Do NOT invent or infer any information.
 
 Context:
 {context}
@@ -168,7 +174,7 @@ def get_conversation_chain(_llm_model: ChatGroq, _vector_store: FAISS, _memory: 
         conversation_chain = ConversationalRetrievalChain.from_llm(
             llm=_llm_model,
             # Increased k to retrieve more documents, increasing chances of getting all relevant project details
-            retriever=_vector_store.as_retriever(search_kwargs={"k": 5}),
+            retriever=_vector_store.as_retriever(search_kwargs={"k": 8}), # INCREASED K HERE
             memory=_memory,
             combine_docs_chain_kwargs={"prompt": QA_CHAIN_PROMPT},
             return_source_documents=False # Set to True if you want to see what docs were retrieved
@@ -183,8 +189,7 @@ conversation_chain = get_conversation_chain(llm, vectorstore, st.session_state.c
 
 
 # --- Streamlit UI Components & Custom Design ---
-# Changed layout to "wide" to gain more control with max-width in CSS, then control via CSS
-st.set_page_config(page_title="Nithin's AI Assistant", page_icon="🤖", layout="wide") # Changed to wide
+st.set_page_config(page_title="Nithin's AI Assistant", page_icon="🤖", layout="wide")
 
 # --- Custom CSS for enhanced design and reduced size ---
 st.markdown("""
@@ -402,12 +407,25 @@ if prompt := st.chat_input("Ask me about Nithin..."):
         r"good morning", r"good afternoon", r"good evening", r"what's up",
         r"namaste", r"heyy", r"hi there"
     ]
+    # Define common ending phrases
+    endings = [
+        r"thank you", r"thanks", r"ok thank you", r"bye", r"goodbye",
+        r"that's all", r"thats all", r"all good", r"no more questions", r"nothing else"
+    ]
+
 
     # Check if the prompt is a greeting
     is_greeting = False
     for greeting_pattern in greetings:
         if re.fullmatch(r"\b" + greeting_pattern + r"\b.*", lower_prompt):
             is_greeting = True
+            break
+    
+    # Check if the prompt is an ending
+    is_ending = False
+    for ending_pattern in endings:
+        if re.fullmatch(r"\b" + ending_pattern + r"\b.*", lower_prompt):
+            is_ending = True
             break
 
     # Placeholder for the bot's response
@@ -416,7 +434,6 @@ if prompt := st.chat_input("Ask me about Nithin..."):
         full_response = ""
 
         if is_greeting:
-            # Custom polite responses for greetings
             if "how are you" in lower_prompt or "how's it going" in lower_prompt:
                 full_response = "I'm an AI, so I don't have feelings, but I'm ready to help! How can I assist you with Nithin's portfolio today?"
             elif "good morning" in lower_prompt:
@@ -428,8 +445,13 @@ if prompt := st.chat_input("Ask me about Nithin..."):
             else:
                 full_response = "Hello there! I'm Nithin's AI assistant. How can I help you explore his portfolio?"
             
-            # Use inline style to force black text for greetings
             message_placeholder.markdown(f'<p style="color: #000000 !important; -webkit-text-fill-color: #000000 !important; margin-bottom: 0;">{full_response}</p>', unsafe_allow_html=True)
+
+        elif is_ending:
+            full_response = "You're welcome! Feel free to ask if you have more questions about Nithin's portfolio."
+            message_placeholder.markdown(f'<p style="color: #000000 !important; -webkit-text-fill-color: #000000 !important; margin-bottom: 0;">{full_response}</p>', unsafe_allow_html=True)
+            # Optionally clear memory after an ending
+            # st.session_state.conversation_memory.clear()
 
         else:
             if conversation_chain:
@@ -440,7 +462,6 @@ if prompt := st.chat_input("Ask me about Nithin..."):
                         )
                         full_response = response_obj["answer"]
                         
-                        # Use inline style to force black text for AI responses
                         message_placeholder.markdown(f'<p style="color: #000000 !important; -webkit-text-fill-color: #000000 !important; margin-bottom: 0;">{full_response}</p>', unsafe_allow_html=True)
 
                     except Exception as e:
@@ -448,7 +469,6 @@ if prompt := st.chat_input("Ask me about Nithin..."):
                         st.error(full_response)
             else:
                 full_response = "Chatbot is not fully initialized. Please check the backend configuration."
-                # Use inline style to force black text for initialization message
                 st.markdown(f'<p style="color: #000000 !important; -webkit-text-fill-color: #000000 !important; margin-bottom: 0;">{full_response}</p>', unsafe_allow_html=True)
 
     # Add assistant message to chat history for future context
@@ -458,8 +478,6 @@ if prompt := st.chat_input("Ask me about Nithin..."):
 # --- Clear Chat Button (Moved to bottom and styled for smaller size) ---
 st.markdown("---") # Add a separator for better visual grouping
 
-# This button is explicitly styled with a custom class 'small-button-style' through JS below.
-# Setting type="secondary" helps in targeting it with CSS/JS.
 if st.button("Clear Chat", key="clear_chat_button", help="Clear all messages from the chat.", type="secondary"):
     st.session_state.messages = []
     st.session_state.conversation_memory = ConversationBufferWindowMemory(
