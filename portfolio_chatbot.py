@@ -55,7 +55,7 @@ dummy_texts = [
 
     "Nithin is located in Dakshina Kannada, Karnataka, 574325.",
     "Nithin Shetty M resides in Dakshina Kannada, Karnataka, 574325."
-    
+
     # Executive Summary
     "Nithin Shetty M is an AI & ML engineering student with hands-on experience in deep learning, LLM-based agents, and real-time systems.",
     "He is skilled in deploying AI/ML solutions using LangChain, FAISS, and Python.",
@@ -122,15 +122,16 @@ def get_vectorstore(texts: list[str], _embeddings_model: GoogleGenerativeAIEmbed
         st.stop()
 
 vectorstore = get_vectorstore(dummy_texts, embeddings)
-
-# --- Define the custom prompt for the chatbot (MORE ROBUST) ---
 CUSTOM_PROMPT_TEMPLATE = """You are Nithin Shetty M's highly detailed and helpful AI portfolio assistant.
 Your primary goal is to provide comprehensive and accurate answers about Nithin based *only* on the provided context.
 **Crucially, prioritize providing all available details from the context for every relevant question.**
 If a question asks about Nithin's projects, ensure you mention *all* projects found in the context and provide their full descriptions, roles, technologies, features, and impact if available.
 If a question is about Nithin's skills, list all relevant skills (programming languages, AI/ML, LLM/GenAI tools, Web/UI, soft skills).
-**If asked about contact details, email, or phone, you MUST provide ALL available contact information including the full email address  (e.g., shettyn517@gmail.com), phone number, LinkedIn, and GitHub links.**
-If the information is NOT present in the provided context, state clearly and politely: "I apologize, but I cannot find information on that specific topic within Nithin's provided portfolio context. I can answer questions about his skills, projects, education, experience, contact details, and certifications. For more details contact Nithin via email : shettyn517@gmail.com"
+**If asked about contact details, email, or phone, you MUST provide ALL available contact information including the full email address (e.g., shettyn517@gmail.com), phone number, LinkedIn, and GitHub links.**
+
+**IMPORTANT: Do NOT apologize, explain your internal reasoning, or reference what was or was not available in 'earlier context.' Just answer directly based on the information provided to you in the current context.**
+
+If the information needed to answer a question is NOT present in the provided context, simply state: "I cannot find information on that specific topic within Nithin's provided portfolio context. I can answer questions about his skills, projects, education, experience, contact details, and certifications. For more details, you can contact Nithin via email: shettyn517@gmail.com"
 **Do NOT invent or infer any information.**
 
 Context:
@@ -147,7 +148,6 @@ QA_CHAIN_PROMPT = PromptTemplate(
     input_variables=["context", "chat_history", "question"],
     template=CUSTOM_PROMPT_TEMPLATE,
 )
-
 
 # --- Initialize conversation memory (Using ConversationBufferWindowMemory for efficiency) ---
 if "conversation_memory" not in st.session_state:
