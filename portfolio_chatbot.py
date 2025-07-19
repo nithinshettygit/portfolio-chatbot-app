@@ -176,6 +176,27 @@ st.set_page_config(page_title="Nithin's AI Assistant", page_icon="🤖", layout=
 # --- Custom CSS for enhanced design and reduced size ---
 st.markdown("""
 <style>
+/* Hide Streamlit header (including "Fork", "GitHub", "Deploy" if present) */
+[data-testid="stToolbar"] {
+    display: none; /* This hides the entire top-right bar */
+    visibility: hidden; /* Added for belt-and-braces approach */
+    height: 0; /* Ensures it takes no space */
+}
+
+/* Hide the main menu button (three dots) if it somehow remains */
+#MainMenu {
+    visibility: hidden;
+    height: 0;
+    overflow: hidden;
+}
+
+/* Hide the "Made with Streamlit" footer */
+footer {
+    visibility: hidden;
+    height: 0;
+}
+
+
 /* General App Background and Layout */
 .stApp {
     background-color: #f0f2f6; /* Light grey background for the entire app */
@@ -326,10 +347,6 @@ h1 {
     max-height: 50vh; /* IMPORTANT: Reduced max-height for a more compact chat window */
     padding-right: 10px; /* Space for scrollbar */
 }
-
-/* Remove default Streamlit footer */
-footer { visibility: hidden; }
-
 </style>
 """, unsafe_allow_html=True)
 
