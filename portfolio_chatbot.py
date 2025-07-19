@@ -215,13 +215,20 @@ st.markdown("""
 /* Assistant message bubble */
 .stChatMessage.st-emotion-cache-1c7y2gy:nth-child(odd) { /* This targets the assistant message */
     background-color: #f7f7f7 !important; /* Light grey for assistant messages, forced */
-    color: #1a1a2e !important; /* VERY DARK BLUE for assistant messages, forced for visibility */
-    -webkit-text-fill-color: #1a1a2e !important; /* Added for iOS/Safari specific overrides */
+    color: #000000 !important; /* FORCED PURE BLACK TEXT for assistant messages */
+    -webkit-text-fill-color: #000000 !important; /* Added for iOS/Safari specific overrides */
     align-self: flex-start; /* Align assistant messages to the left */
     border-bottom-left-radius: 2px;
     margin-right: auto; /* Push to the left */
     border: 1px solid #eaeaea !important; /* Forced border */
 }
+
+/* IMPORTANT: Target the actual text content within the assistant message */
+.stChatMessage.st-emotion-cache-1c7y2gy:nth-child(odd) p {
+    color: #000000 !important; /* FORCED PURE BLACK TEXT for paragraph content */
+    -webkit-text-fill-color: #000000 !important; /* Added for iOS/Safari specific overrides */
+}
+
 
 /* Chat input bar styling */
 .stTextInput > div > div > input {
