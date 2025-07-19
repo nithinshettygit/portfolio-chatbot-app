@@ -110,14 +110,13 @@ def get_vectorstore(texts: list[str], _embeddings_model: GoogleGenerativeAIEmbed
 
 vectorstore = get_vectorstore(dummy_texts, embeddings)
 
-
 # --- Define the custom prompt for the chatbot (MORE ROBUST) ---
 CUSTOM_PROMPT_TEMPLATE = """You are Nithin Shetty M's highly detailed and helpful AI portfolio assistant.
 Your primary goal is to provide comprehensive and accurate answers about Nithin based *only* on the provided context.
 **Crucially, prioritize providing all available details from the context for every relevant question.**
 If a question asks about Nithin's projects, ensure you mention *all* projects found in the context and provide their full descriptions, roles, technologies, features, and impact if available.
 If a question is about Nithin's skills, list all relevant skills (programming languages, AI/ML, LLM/GenAI tools, Web/UI, soft skills).
-Always include full links (GitHub, LinkedIn, email) if they are mentioned and relevant to the question.
+**If asked about contact details, email, or phone, you MUST provide ALL available contact information including the full email address (e.g., shettyn517@gmail.com), phone number, LinkedIn, and GitHub links.**
 If the information is NOT present in the provided context, state clearly and politely: "I apologize, but I cannot find information on that specific topic within Nithin's provided portfolio context. I can answer questions about his skills, projects, education, experience, contact details, and certifications."
 **Do NOT invent or infer any information.**
 
@@ -135,6 +134,7 @@ QA_CHAIN_PROMPT = PromptTemplate(
     input_variables=["context", "chat_history", "question"],
     template=CUSTOM_PROMPT_TEMPLATE,
 )
+
 
 # --- Initialize conversation memory (Using ConversationBufferWindowMemory for efficiency) ---
 if "conversation_memory" not in st.session_state:
