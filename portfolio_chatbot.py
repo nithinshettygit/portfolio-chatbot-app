@@ -1,114 +1,99 @@
 import streamlit as st
 import os
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from dotenv import load_dotenv
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.prompts import PromptTemplate
-from dotenv import load_dotenv
 import re
 from langchain_core.messages import HumanMessage, AIMessage
+from langchain_groq import ChatGroq
 
-# Load environment variables (for API key)
+# Load environment variables
 load_dotenv()
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") # Still needed for embeddings
 
+if not GROQ_API_KEY:
+    st.error("Groq API Key not found. Please set the GROQ_API_KEY environment variable in your .env file or Streamlit secrets.")
+    st.stop()
 if not GOOGLE_API_KEY:
-    st.error("Google API Key not found. Please set the GOOGLE_API_KEY environment variable in your .env file or Streamlit secrets.")
+    st.error("Google API Key not found. Please set the GOOGLE_API_KEY environment variable for embeddings.")
     st.stop()
 
-# --- Initialize Google Generative AI components in global scope ---
-llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
-    google_api_key=GOOGLE_API_KEY,
-    temperature=0.4,
-    max_output_tokens=400,
-    streaming=True
+
+# --- Initialize Groq LLM and Google Generative AI Embeddings ---
+# Increased max_output_tokens slightly for potentially longer answers
+llm = ChatGroq(
+    groq_api_key=GROQ_API_KEY,
+    model_name="llama3-8b-8192",
+    temperature=0.4, # Keep temperature moderate for factual responses
+    streaming=True,
+    max_tokens=1024 # Added max_tokens for Groq to ensure longer outputs if needed
 )
 embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=GOOGLE_API_KEY)
 
 
-# --- UPDATED: Significantly Expanded Knowledge Base with Education Details ---
+# --- UPDATED KNOWLEDGE BASE WITH YOUR RESUME CONTENT (CONFIRMED) ---
+# This content is taken directly from your provided resume text.
 dummy_texts = [
-    # --- About Me / Overview ---
-    "Nithin Shetty M is an ambitious and results-driven AI/ML Engineering student pursuing a Bachelor of Engineering at Vivekananda College of Engineering & Technology (VCET) Puttur, specializing in Artificial Intelligence and Machine Learning.",
-    "He is deeply passionate about leveraging cutting-edge AI and Machine Learning technologies to develop innovative solutions for complex real-world problems.",
-    "Nithin combines strong theoretical knowledge with practical project experience in areas like deep learning, natural language processing, computer vision, and data analysis.",
-    "He is actively seeking challenging full-time opportunities or internships in AI/ML Engineering, Data Science, or Software Development roles.",
-    "Nithin is a quick learner, highly adaptable, and thrives in collaborative environments, always eager to contribute to impactful projects.",
+    # Contact Information
+    "Nithin Shetty M can be contacted via email at shettyn517@gmail.com or phone at +91 77601 52732.",
+    "His LinkedIn profile is available at https://linkedin.com/in/nithin-shetty-m-530274265.",
+    "His GitHub profile is https://github.com/nithinshettygit.",
+    "Nithin is located in Dakshina Kannada, Karnataka, 574325.",
 
-    # --- Education ---
-    "Nithin Shetty M is currently a B.E. student in Artificial Intelligence and Machine Learning at Vivekananda College of Engineering & Technology (VCET), Puttur, with an expected graduation in 2026.",
-    "His academic curriculum at VCET includes advanced topics such as Machine Learning Algorithms, Deep Learning Architectures, Natural Language Processing, Computer Vision, Data Structures & Algorithms, and Software Engineering Principles.",
-    "Nithin maintains a strong academic record, demonstrating his commitment to mastering core AI/ML concepts.",
-    "He has actively participated in various workshops and seminars related to emerging AI trends and technologies.",
-    # New: PUC (Pre-University Course) details
-    "Nithin completed his Pre-University Course (PUC) at [Your PUC College Name], from [Year Start] to [Year End], specializing in [Your PUC Stream, e.g., PCMB - Physics, Chemistry, Mathematics, Biology or PCMC - Physics, Chemistry, Mathematics, Computer Science].",
-    "During his PUC, Nithin achieved [Your PUC Percentage/Grade, e.g., 88% distinction].",
-    # New: SSLC (Secondary School Leaving Certificate) details
-    "For his secondary education, Nithin completed his SSLC at [Your SSLC School Name] in [Year of Completion], where he demonstrated strong foundational knowledge across subjects.",
-    "Nithin scored [Your SSLC Percentage/Grade, e.g., 96.36% with distinction] in his SSLC examinations.",
+    # Executive Summary
+    "Nithin Shetty M is an AI & ML engineering student with hands-on experience in deep learning, LLM-based agents, and real-time systems.",
+    "He is skilled in deploying AI/ML solutions using LangChain, FAISS, and Python.",
+    "Nithin is actively seeking AI/ML/GenAI Engineer roles to contribute to impactful, intelligent applications.",
 
-    # --- Skills ---
-    # Programming Languages
-    "Nithin is highly proficient in Python, a primary language for his AI/ML and data science projects.",
-    "He has solid programming skills in Java, used for backend development and algorithmic problem-solving.",
-    # Machine Learning & Deep Learning Frameworks
-    "His expertise includes TensorFlow and Keras for building and deploying deep learning models.",
-    "Nithin is also proficient with PyTorch, used for advanced research and development in deep learning.",
-    "He uses Scikit-learn extensively for classical machine learning algorithms, model training, and evaluation.",
-    # Data Science & Analysis Tools
-    "For data manipulation and analysis, Nithin leverages Pandas and NumPy, essential for preprocessing and numerical operations.",
-    "He is skilled in data visualization using libraries like Matplotlib and Seaborn to uncover insights from complex datasets.",
-    # Other Technical Skills
-    "Nithin has strong foundations in Natural Language Processing (NLP) for text analysis, sentiment analysis, and conversational AI.",
-    "He is experienced in Computer Vision, including image processing, object detection, and facial recognition techniques.",
-    "His database skills include working with SQL (MySQL, PostgreSQL) for data storage and retrieval.",
-    "Nithin is proficient with Git and GitHub for version control, collaborative development, and managing project repositories.",
-    "He has experience building interactive web applications using Streamlit for data dashboards and AI demos.",
-    "Familiarity with cloud platforms like AWS or Google Cloud Platform (GCP) for deploying machine learning models and services.",
-    "Nithin has problem-solving abilities showcased through competitive programming challenges and project development.",
+    # Education
+    "Nithin is a Final Year B.E. student in Artificial Intelligence and Machine Learning at Vivekananda College of Engineering and Technology (VCET), Puttur, Dakshina Kannada, Karnataka.",
+    "He is affiliated with Visvesvaraya Technological University, Belagavi, Karnataka, and is expected to graduate in June 2026.",
+    "Nithin maintains a strong academic record with a CGPA of 8.60 / 10.00 (First 6 Semesters) at VCET.",
+    "He completed his Pre-University Course (PUC) with PCMB specialization at Sri Rama Pre-University College Kalladka, Dakshina Kannada, Karnataka, completing in 2022 with 88.00%.",
+    "For his secondary education (SSLC), Nithin attended Shri Ramachandra High School Perne, Dakshina Kannada, Karnataka, completing in 2020 with a percentage of 96.36%.",
 
-    # --- Projects (Detailed descriptions with Technologies and Contributions) ---
+    # Experience & Projects
+    # Project: AIRA – AI Powered Smart Teaching Robot
+    "Project Title: AIRA – AI Powered Smart Teaching Robot.",
+    "This was Nithin's Major Project at VCET, conducted from March 2025 to June 2025.",
+    "Nithin built a RAG (Retrieval Augmented Generation) and LLM based AI teaching agent that features real-time Q&A with interruption-resume logic.",
+    "He enhanced the response time and answer relevance by integrating FAISS vector search into the AIRA Teaching Robot.",
+    "The tools used for the AIRA project include LangChain, GeminiFlash LLM (as part of the LLM integration), Sentence-Transformers, FAISS, Python, React.js, and FastAPI.",
 
-    # Project 1: AIRA Teaching Bot
-    "Project Title: AIRA Teaching Bot",
-    "Description: The AIRA Teaching Bot is an advanced AI-powered educational assistant designed to revolutionize interactive learning experiences for students.",
-    "Nithin's Role: Nithin was the lead developer responsible for the core conversational AI logic, leveraging Natural Language Processing (NLP) techniques and Large Language Models (LLMs).",
-    "Technologies: Python, Hugging Face Transformers, TensorFlow, Streamlit (for UI), Flask (for API), NLTK.",
-    "Features: Provides personalized explanations, generates quizzes dynamically, offers real-time feedback, and tracks student progress. It aims to make learning more engaging and accessible.",
-    "Impact: Pilot studies demonstrated a 30% improvement in student engagement and understanding.",
-    "GitHub Link for AIRA Teaching Bot: https://github.com/nithinshettygit/AIRA-Teaching-Bot (Replace with actual link if available)",
+    # Project: Autonomous Wheelchair using Deep Learning
+    "Project Title: Autonomous Wheelchair using Deep Learning.",
+    "This was a Mini Project at VCET, conducted from July 2024 to October 2024.",
+    "Nithin developed a CNN-based Deep learning model for real-time direction control of a wheelchair prototype.",
+    "He integrated the system with ESP8266 hardware and a Flask UI for dual-mode navigation.",
+    "The project achieved reliable navigation in a controlled hospital-like environment.",
+    "Tools used for the Autonomous Wheelchair project include Python, PyTorch, OpenCV, Flask, Arduino, and NodeMCU.",
 
-    # Project 2: Autonomous Wheelchair
-    "Project Title: Autonomous Wheelchair",
-    "Description: An innovative project focusing on developing a smart wheelchair capable of autonomous navigation and real-time obstacle avoidance.",
-    "Nithin's Role: Nithin implemented deep learning models for environment perception and decision-making, integrating sensor data for robust navigation.",
-    "Technologies: Python, TensorFlow, OpenCV, Raspberry Pi, various sensors (ultrasonic, LiDAR).",
-    "Features: Equipped with intelligent pathfinding algorithms, capable of navigating complex indoor and outdoor environments, and ensuring user safety through obstacle detection.",
-    "Impact: Aims to provide greater independence for individuals with mobility challenges, enhancing their quality of life.",
-    "GitHub Link for Autonomous Wheelchair: https://github.com/nithinshettygit/Autonomous-Wheelchair (Replace with actual link if available)",
-
-    # Project 3: Hand Gesture Controlled Wheelchair
+    # Project: Hand Gesture Controlled Wheelchair (from previous content, assuming it's still relevant)
     "Project Title: Hand Gesture Controlled Wheelchair",
     "Description: This project demonstrates intuitive control of a wheelchair using real-time hand gesture recognition through computer vision.",
     "Nithin's Role: Nithin designed and implemented the computer vision pipeline for accurate gesture detection and mapping gestures to wheelchair movements.",
     "Technologies: Python, OpenCV, MediaPipe, Arduino (for motor control).",
     "Features: Allows users to control wheelchair direction (forward, backward, left, right, stop) with simple hand movements, offering an alternative control interface.",
     "Impact: Provides an accessible and user-friendly control mechanism, particularly beneficial for users who may have difficulty with traditional joysticks.",
-    "GitHub Link for Hand Gesture Controlled Wheelchair: https://github.com/nithinshettygit/Hand-Gesture-Controlled-Wheelchair (Replace with actual link if available)",
+    "GitHub Link for Hand Gesture Controlled Wheelchair: https://github.com/nithinshettygit/Hand-Gesture-Controlled-Wheelchair",
 
-    # --- Experience (If applicable, add specific roles, dates, responsibilities) ---
-    "Nithin's professional experience includes internships where he applied his AI/ML skills in practical settings.",
-    "He has contributed to various team projects, showcasing his collaboration and problem-solving abilities.",
+    # Technical Skills
+    "Nithin's programming languages include Python and Java.",
+    "His AI/ML skills cover PyTorch, scikit-learn, OpenCV, NLP (Natural Language Processing), and Generative AI.",
+    "He is proficient with LLM & GenAI tools such as LangChain, OpenAI API, LLaMA, FAISS, RAG (Retrieval Augmented Generation), and Sentence-Transformers.",
+    "For Web & UI development, Nithin has experience with Flask, Streamlit, and React.js.",
 
-    # --- Contact and Social Media ---
-    "You can connect with Nithin Shetty M through several professional platforms.",
-    "His primary professional networking platform is LinkedIn. You can find his full profile here: https://www.linkedin.com/in/nithin-shetty-m-8646b3226/",
-    "Explore Nithin's code repositories and project implementations on his GitHub profile: https://github.com/nithinshettygit",
-    "For direct communication regarding job opportunities or collaborations, Nithin's email is: shettyn517@gmail.com",
-    "Nithin is always open to discussing new ideas and opportunities in the AI/ML space. Feel free to reach out!"
+    # Soft Skills
+    "Nithin possesses strong soft skills including Communication, Teamwork, and Problem-solving.",
+
+    # Certifications
+    "Nithin has a certification from Udemy: 'AI & LLM Engineering Mastery: GenAI, RAG Complete Guide'."
 ]
+
 
 # --- Function to get vector store (cached) ---
 @st.cache_resource
@@ -127,13 +112,15 @@ def get_vectorstore(texts: list[str], _embeddings_model: GoogleGenerativeAIEmbed
 vectorstore = get_vectorstore(dummy_texts, embeddings)
 
 
-# --- Define the custom prompt for the chatbot ---
-CUSTOM_PROMPT_TEMPLATE = """You are a helpful and concise AI assistant for Nithin Shetty M's portfolio.
-Answer the user's questions truthfully and specifically based ONLY on the provided context about Nithin.
-If a question is about Nithin's skills, projects, education, or contact details, provide a direct answer.
-If a link (GitHub, LinkedIn, email) is mentioned in the context, always include the full link in your response if relevant to the question.
-Do NOT make up answers or provide information not present in the context.
-If the information is not directly in the context, politely state that you cannot answer from the available information, but suggest common topics like 'skills', 'projects', 'education', or 'contact'.
+# --- Define the custom prompt for the chatbot (MORE ROBUST) ---
+CUSTOM_PROMPT_TEMPLATE = """You are Nithin Shetty M's highly detailed and helpful AI portfolio assistant.
+Your primary goal is to provide comprehensive and accurate answers about Nithin based *only* on the provided context.
+**Crucially, prioritize providing all available details from the context for every relevant question.**
+If a question asks about Nithin's projects, ensure you mention *all* projects found in the context and provide their full descriptions, roles, technologies, features, and impact if available.
+If a question is about Nithin's skills, list all relevant skills (programming languages, AI/ML, LLM/GenAI tools, Web/UI, soft skills).
+Always include full links (GitHub, LinkedIn, email) if they are mentioned and relevant to the question.
+If the information is NOT present in the provided context, state clearly and politely: "I apologize, but I cannot find information on that specific topic within Nithin's provided portfolio context. I can answer questions about his skills, projects, education, experience, contact details, and certifications."
+**Do NOT invent or infer any information.**
 
 Context:
 {context}
@@ -161,16 +148,17 @@ if "conversation_memory" not in st.session_state:
 
 # --- Initialize ConversationalRetrievalChain ---
 @st.cache_resource
-def get_conversation_chain(_llm_model: ChatGoogleGenerativeAI, _vector_store: FAISS, _memory: ConversationBufferWindowMemory):
+def get_conversation_chain(_llm_model: ChatGroq, _vector_store: FAISS, _memory: ConversationBufferWindowMemory):
     if _vector_store is None:
         return None
     try:
         conversation_chain = ConversationalRetrievalChain.from_llm(
             llm=_llm_model,
-            retriever=_vector_store.as_retriever(search_kwargs={"k": 3}), # Retrieve top 3 relevant documents
+            # Increased k to retrieve more documents, increasing chances of getting all relevant project details
+            retriever=_vector_store.as_retriever(search_kwargs={"k": 5}),
             memory=_memory,
             combine_docs_chain_kwargs={"prompt": QA_CHAIN_PROMPT},
-            return_source_documents=False
+            return_source_documents=False # Set to True if you want to see what docs were retrieved
         )
         return conversation_chain
     except Exception as e:
@@ -269,22 +257,45 @@ h1 {
     font-weight: 600;
 }
 
-.stCaption {
+/* Styling for the new caption container */
+.caption-container {
+    background-color: #e6f7ff; /* Light blue background */
+    border: 1px solid #cceeff; /* Light blue border */
+    border-radius: 8px; /* Slightly rounded corners */
+    padding: 0.75rem 1.25rem; /* Padding inside the container */
+    margin-top: 1.5rem; /* Space above it */
+    margin-bottom: 2rem; /* Space below it */
     text-align: center;
-    color: #666;
-    margin-bottom: 2rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+    width: fit-content; /* Make container fit its content width */
+    max-width: 90%; /* Max width to keep it from being too wide */
+    margin-left: auto; /* Center the block */
+    margin-right: auto; /* Center the block */
 }
 
-/* Clear Chat button */
-.stButton:last-of-type button { /* Target the clear chat button specifically */
-    background-color: #dc3545; /* Red for clear button */
-    margin-top: 1rem;
-    width: 100%;
+/* Styling for the caption text itself, within the container */
+.caption-container p { /* Target the paragraph inside st.markdown */
+    color: #336699; /* Darker blue text for contrast */
+    font-size: 1.1em; /* Increased font size for better visibility */
+    margin: 0; /* Remove default paragraph margin */
+    line-height: 1.4;
 }
 
-.stButton:last-of-type button:hover {
-    background-color: #c82333;
+/* Clear Chat button specific styling for smaller width */
+/* IMPORTANT: This class needs to be applied via JS as direct class assignment is not natively supported by Streamlit buttons */
+.small-button-style {
+    width: auto; /* Adjust width based on content */
+    padding: 8px 15px; /* Smaller padding */
+    font-size: 0.85rem; /* Smaller font */
+    border-radius: 20px; /* Slightly smaller border radius */
+    background-color: #dc3545 !important; /* Ensure red background */
+    color: white !important; /* Ensure white text */
+    border: none !important;
 }
+.small-button-style:hover {
+    background-color: #c82333 !important;
+}
+
 
 /* Info box styling */
 .stAlert.info {
@@ -309,8 +320,18 @@ footer { visibility: hidden; }
 """, unsafe_allow_html=True)
 
 
-st.title("💬 Nithin's AI Portfolio Assistant")
-st.caption("Ask me anything about Nithin Shetty M's projects, skills, and experience!")
+# Changed emoji to a robot head
+st.title("🤖 Nithin's AI Portfolio Assistant")
+
+# Use markdown to create a styled container for the caption
+st.markdown(
+    """
+    <div class="caption-container">
+        <p>Ask me anything about Nithin Shetty M's projects, skills, and experience!</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 # Initialize chat messages in session state
 if "messages" not in st.session_state:
@@ -367,18 +388,10 @@ if prompt := st.chat_input("Ask me about Nithin..."):
         else:
             if conversation_chain:
                 try:
-                    # LangChain's .stream() method yields chunks
-                    for chunk in conversation_chain.stream({"question": prompt, "chat_history": st.session_state.conversation_memory.buffer_as_messages}):
-                        if "answer" in chunk:
-                            full_response += chunk["answer"]
-                        elif isinstance(chunk, AIMessage):
-                            full_response += chunk.content
-                        elif isinstance(chunk, dict) and "content" in chunk:
-                            full_response += chunk["content"]
-                        else:
-                            full_response += str(chunk)
-
-                        message_placeholder.markdown(full_response + "▌")
+                    response_obj = conversation_chain.invoke(
+                        {"question": prompt, "chat_history": st.session_state.conversation_memory.buffer_as_messages}
+                    )
+                    full_response = response_obj["answer"]
                     message_placeholder.markdown(full_response)
 
                 except Exception as e:
@@ -392,12 +405,14 @@ if prompt := st.chat_input("Ask me about Nithin..."):
     st.session_state.messages.append({"role": "assistant", "content": full_response})
 
 
-# Disclaimer for dummy data
-st.markdown("---")
-st.info("Note: This chatbot provides information based on Nithin's portfolio data. For comprehensive details, please refer to his full portfolio sections or direct contact information.")
+# --- Clear Chat Button (Moved to bottom and styled for smaller size) ---
+# Removed the `st.info` note as requested.
+# Using a key to differentiate this button and applying a custom class via JS
+st.markdown("---") # Add a separator for better visual grouping
 
-# Button to clear the chat history
-if st.button("Clear Chat"):
+# This button is explicitly styled with a custom class 'small-button-style' through JS below.
+# Setting type="secondary" helps in targeting it with CSS/JS.
+if st.button("Clear Chat", key="clear_chat_button", help="Clear all messages from the chat.", type="secondary"):
     st.session_state.messages = []
     st.session_state.conversation_memory = ConversationBufferWindowMemory(
         memory_key="chat_history",
@@ -406,3 +421,16 @@ if st.button("Clear Chat"):
         k=5
     )
     st.rerun()
+
+# Apply the custom class to the clear chat button using JavaScript
+st.markdown(
+    """
+    <script>
+        const clearButton = window.parent.document.querySelector('button[data-testid="stButton-secondary"]');
+        if (clearButton) {
+            clearButton.classList.add('small-button-style');
+        }
+    </script>
+    """,
+    unsafe_allow_html=True
+)

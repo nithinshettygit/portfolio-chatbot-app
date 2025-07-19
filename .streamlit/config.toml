@@ -1,2 +1,13 @@
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
+
+[server]
+port = 8501
+headless = true
+
+[global]
+enableCORS = true
+enableXsrfProtection = true
+
+[client]
+toolbarMode = "minimal"
