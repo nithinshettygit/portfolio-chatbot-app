@@ -1,6 +1,6 @@
 import streamlit as st
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv # <-- Keep this for .env file loading
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.chains import ConversationalRetrievalChain
@@ -10,13 +10,14 @@ import re
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_groq import ChatGroq
 
-# Load environment variables
+# --- REVERTED: Load environment variables directly from .env ---
+# This method works well when running locally or in Codespaces with a .env file.
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") # Still needed for embeddings
 
 if not GROQ_API_KEY:
-    st.error("Groq API Key not found. Please set the GROQ_API_KEY environment variable in your .env file or Streamlit secrets.")
+    st.error("Groq API Key not found. Please set the GROQ_API_KEY environment variable in your .env file.")
     st.stop()
 if not GOOGLE_API_KEY:
     st.error("Google API Key not found. Please set the GOOGLE_API_KEY environment variable for embeddings.")
@@ -24,7 +25,6 @@ if not GOOGLE_API_KEY:
 
 
 # --- Initialize Groq LLM and Google Generative AI Embeddings ---
-# Increased max_output_tokens slightly for potentially longer answers
 llm = ChatGroq(
     groq_api_key=GROQ_API_KEY,
     model_name="llama3-8b-8192",
@@ -36,7 +36,6 @@ embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_a
 
 
 # --- UPDATED KNOWLEDGE BASE WITH YOUR RESUME CONTENT (CONFIRMED) ---
-# This content is taken directly from your provided resume text.
 dummy_texts = [
     # Contact Information
     "Nithin Shetty M can be contacted via email at shettyn517@gmail.com or phone at +91 77601 52732.",
@@ -150,6 +149,7 @@ if "conversation_memory" not in st.session_state:
 @st.cache_resource
 def get_conversation_chain(_llm_model: ChatGroq, _vector_store: FAISS, _memory: ConversationBufferWindowMemory):
     if _vector_store is None:
+        st.warning("Vector store is not available, conversation chain cannot be initialized.") # <-- RESTORED WARNING
         return None
     try:
         conversation_chain = ConversationalRetrievalChain.from_llm(
@@ -163,6 +163,7 @@ def get_conversation_chain(_llm_model: ChatGroq, _vector_store: FAISS, _memory: 
         return conversation_chain
     except Exception as e:
         st.error(f"Error initializing conversation chain: {e}")
+        st.info("Please check if your LLM and embeddings models are correctly configured and accessible.")
         return None
 
 conversation_chain = get_conversation_chain(llm, vectorstore, st.session_state.conversation_memory)
@@ -202,23 +203,23 @@ st.markdown("""
 }
 
 /* User message bubble */
-.stChatMessage.st-emotion-cache-1c7y2gy:nth-child(even) { /* This targets the user message, which is typically the second (even) child in the message list */
-    background-color: #e0f2f7; /* Light blue for user messages */
-    color: #212121;
+.stChatMessage.st-emotion-cache-1c7y2gy:nth-child(even) { /* This targets the user message */
+    background-color: #e0f2f7 !important; /* Light blue for user messages, forced */
+    color: #212121 !important; /* Force dark grey for user text */
     align-self: flex-end; /* Align user messages to the right */
     border-bottom-right-radius: 2px;
     margin-left: auto; /* Push to the right */
-    border: 1px solid #cceeff;
+    border: 1px solid #cceeff !important; /* Forced border */
 }
 
 /* Assistant message bubble */
-.stChatMessage.st-emotion-cache-1c7y2gy:nth-child(odd) { /* This targets the assistant message, typically the first (odd) child */
-    background-color: #f7f7f7; /* Light grey for assistant messages */
-    color: #333;
+.stChatMessage.st-emotion-cache-1c7y2gy:nth-child(odd) { /* This targets the assistant message */
+    background-color: #f7f7f7 !important; /* Light grey for assistant messages, forced */
+    color: #000000 !important; /* FORCE BLACK TEXT for assistant messages */
     align-self: flex-start; /* Align assistant messages to the left */
     border-bottom-left-radius: 2px;
     margin-right: auto; /* Push to the left */
-    border: 1px solid #eaeaea;
+    border: 1px solid #eaeaea !important; /* Forced border */
 }
 
 /* Chat input bar styling */
@@ -387,16 +388,17 @@ if prompt := st.chat_input("Ask me about Nithin..."):
 
         else:
             if conversation_chain:
-                try:
-                    response_obj = conversation_chain.invoke(
-                        {"question": prompt, "chat_history": st.session_state.conversation_memory.buffer_as_messages}
-                    )
-                    full_response = response_obj["answer"]
-                    message_placeholder.markdown(full_response)
+                with st.spinner("Thinking..."): # <-- RESTORED SPINNER
+                    try:
+                        response_obj = conversation_chain.invoke(
+                            {"question": prompt, "chat_history": st.session_state.conversation_memory.buffer_as_messages}
+                        )
+                        full_response = response_obj["answer"]
+                        message_placeholder.markdown(full_response)
 
-                except Exception as e:
-                    full_response = f"An error occurred while getting a response: {e}. Please try again."
-                    st.error(full_response)
+                    except Exception as e:
+                        full_response = f"An error occurred while getting a response: {e}. Please try again."
+                        st.error(full_response)
             else:
                 full_response = "Chatbot is not fully initialized. Please check the backend configuration."
                 st.markdown(full_response)
@@ -406,8 +408,6 @@ if prompt := st.chat_input("Ask me about Nithin..."):
 
 
 # --- Clear Chat Button (Moved to bottom and styled for smaller size) ---
-# Removed the `st.info` note as requested.
-# Using a key to differentiate this button and applying a custom class via JS
 st.markdown("---") # Add a separator for better visual grouping
 
 # This button is explicitly styled with a custom class 'small-button-style' through JS below.
