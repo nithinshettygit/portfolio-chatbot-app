@@ -43,9 +43,8 @@ dummy_texts = [
     "To email Nithin, use shettyn517@gmail.com.",
     "His contact email is shettyn517@gmail.com.",
 
-    "Nithin's phone number is +91 77601 52732.",
-    "You can reach Nithin by phone at +91 77601 52732.",
-    "Nithin Shetty M's mobile number is +91 77601 52732.",
+    
+    
 
     "His LinkedIn profile is https://linkedin.com/in/nithin-shetty-m-530274265.",
     "Nithin's LinkedIn: https://linkedin.com/in/nithin-shetty-m-530274265.",
@@ -132,7 +131,7 @@ Your primary goal is to provide comprehensive and accurate answers about Nithin 
 
 If a question asks about Nithin's projects, ensure you mention *all* projects found in the context and provide their full descriptions, roles, technologies, features, and impact if available. Do not claim information is missing if it is present in the context.
 If a question is about Nithin's skills, list all relevant skills (programming languages, AI/ML, LLM/GenAI tools, Web/UI, soft skills).
-If asked about contact details, email, or phone, you MUST provide ALL available contact information including the full email address (e.g., shettyn517@gmail.com), phone number, LinkedIn, and GitHub links.
+If asked about contact details, email, you MUST provide ALL available contact information including the full email address (e.g., shettyn517@gmail.com),LinkedIn, and GitHub links.
 
 For general greetings (e.g., "hi", "hello", "how are you", "hey"), respond with a friendly greeting and offer assistance about Nithin's portfolio.
 For concluding remarks (e.g., "thank you", "bye", "goodbye", "ok thank you", "thanks"), respond with a polite closing statement, e.g., "You're welcome! Feel free to ask if you have more questions about Nithin's portfolio." or "Goodbye! Have a great day."
