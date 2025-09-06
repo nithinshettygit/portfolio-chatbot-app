@@ -27,7 +27,7 @@ if not GOOGLE_API_KEY:
 # --- Initialize Groq LLM and Google Generative AI Embeddings ---
 llm = ChatGroq(
     groq_api_key=GROQ_API_KEY,
-    model_name="llama-3.1-70b-versatile",
+    model_name="llama-3.3-70b-versatile",
     temperature=0.4, # Keep temperature moderate for factual responses
     streaming=True,
     max_tokens=1024 # Added max_tokens for Groq to ensure longer outputs if needed
@@ -500,3 +500,4 @@ st.markdown(
     unsafe_allow_html=True
 
 )
+
