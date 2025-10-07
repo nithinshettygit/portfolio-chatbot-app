@@ -9,3 +9,5 @@ grpcio-tools
 langchain-community
 groq # New: Groq Python client
 langchain-groq # New: LangChain integration for Groq
+sentence-transformers
+
