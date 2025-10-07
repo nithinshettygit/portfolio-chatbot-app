@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 from dotenv import load_dotenv
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+# from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferWindowMemory
@@ -9,19 +9,21 @@ from langchain.prompts import PromptTemplate
 import re
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_groq import ChatGroq
+from langchain_community.embeddings import HuggingFaceEmbeddings
+
 
 # --- Load environment variables directly from .env ---
 # This method works well when running locally or in Codespaces with a .env file.
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") # Still needed for embeddings
+# GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") # Still needed for embeddings
 
 if not GROQ_API_KEY:
     st.error("Groq API Key not found. Please set the GROQ_API_KEY environment variable in your .env file.")
     st.stop()
-if not GOOGLE_API_KEY:
-    st.error("Google API Key not found. Please set the GOOGLE_API_KEY environment variable for embeddings.")
-    st.stop()
+# if not GOOGLE_API_KEY:
+#     st.error("Google API Key not found. Please set the GOOGLE_API_KEY environment variable for embeddings.")
+#     st.stop()
 
 
 # --- Initialize Groq LLM and Google Generative AI Embeddings ---
@@ -32,7 +34,9 @@ llm = ChatGroq(
     streaming=True,
     max_tokens=1024 # Added max_tokens for Groq to ensure longer outputs if needed
 )
-embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=GOOGLE_API_KEY)
+# embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=GOOGLE_API_KEY)
+# --- Initialize local Hugging Face Embeddings (no API key required) ---
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
 
 # --- UPDATED KNOWLEDGE BASE WITH YOUR RESUME CONTENT ---
@@ -500,5 +504,6 @@ st.markdown(
     unsafe_allow_html=True
 
 )
+
 
 
