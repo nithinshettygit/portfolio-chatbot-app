@@ -111,8 +111,11 @@ dummy_texts = [
 
 
 # --- Function to get vector store (cached) ---
-@st.cache_resource
-def get_vectorstore(texts: list[str], _embeddings_model: GoogleGenerativeAIEmbeddings):
+from langchain_community.embeddings import HuggingFaceEmbeddings
+
+def get_vectorstore(texts: list[str], _embeddings_model: HuggingFaceEmbeddings):
+
+
     if not texts:
         st.warning("No texts provided for vector store creation.")
         return None
@@ -504,6 +507,7 @@ st.markdown(
     unsafe_allow_html=True
 
 )
+
 
 
 
